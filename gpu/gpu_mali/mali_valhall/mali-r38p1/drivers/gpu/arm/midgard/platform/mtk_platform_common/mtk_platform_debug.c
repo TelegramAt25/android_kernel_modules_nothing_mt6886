@@ -698,7 +698,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 
 		atomic_set(&kctx->csf.cpu_queue.dump_req_status, BASE_CSF_CPU_QUEUE_DUMP_ISSUED);
 		init_completion(&kctx->csf.cpu_queue.dump_cmp);
-		kbase_event_wakeup(kctx);
+		kbase_event_wakeup_nosync(kctx);
 
 		kbase_csf_scheduler_unlock(kbdev);
 		mutex_unlock(&kctx->csf.lock);
@@ -2481,7 +2481,7 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 
 				atomic_set(&kctx->csf.cpu_queue.dump_req_status, BASE_CSF_CPU_QUEUE_DUMP_ISSUED);
 				init_completion(&kctx->csf.cpu_queue.dump_cmp);
-				kbase_event_wakeup(kctx);
+				kbase_event_wakeup_nosync(kctx);
 				//mutex_unlock(&kctx->csf.lock);
 
 				kbase_csf_scheduler_unlock(kbdev);
