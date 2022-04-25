@@ -808,7 +808,9 @@ struct kbase_csf_event {
  *                    of the USER register page. Currently used only for sanity
  *                    checking.
  * @sched:            Object representing the scheduler's context
+ * @pending_submission_worker: Worker for the pending submission work item
  * @pending_submission_work: Work item to process pending kicked GPU command queues.
+ * @pending_sub_work_thread: task_struct for @pending_submission_worker
  * @cpu_queue:        CPU queue information. Only be available when DEBUG_FS
  *                    is enabled.
  */
@@ -833,7 +835,9 @@ struct kbase_csf_context {
 	wait_queue_head_t pending_wait_queue;
 	atomic_t trigger_submission;
 #endif /* CONFIG_MALI_MTK_PENDING_SUBMISSION_MODE */
-	struct work_struct pending_submission_work;
+	struct kthread_worker pending_submission_worker;
+	struct kthread_work pending_submission_work;
+	struct task_struct *pending_sub_worker_thread;
 #if IS_ENABLED(CONFIG_DEBUG_FS)
 	struct kbase_csf_cpu_queue_context cpu_queue;
 #endif

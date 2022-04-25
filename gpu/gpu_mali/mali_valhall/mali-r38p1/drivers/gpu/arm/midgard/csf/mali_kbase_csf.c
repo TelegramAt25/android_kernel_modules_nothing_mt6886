@@ -841,7 +841,7 @@ static int pending_submission_worker_kthread(void* data)
  * If the queue is already scheduled and resident, it will be started
  * right away, otherwise once the group is made resident.
  */
-static void pending_submission_worker(struct work_struct *work)
+static void pending_submission_worker(struct kthread_work *work)
 {
 	struct kbase_context *kctx =
 		container_of(work, struct kbase_context, csf.pending_submission_work);
@@ -963,7 +963,7 @@ static void enqueue_gpu_submission_work(struct kbase_context *const kctx)
 	} else
 		queue_work(system_highpri_wq, &kctx->csf.pending_submission_work);
 #else
-		queue_work(system_highpri_wq, &kctx->csf.pending_submission_work);
+		kthread_queue_work(&kctx->csf.pending_submission_worker, &kctx->csf.pending_submission_work);
 #endif /* CONFIG_MALI_MTK_PENDING_SUBMISSION_MODE */
 }
 
@@ -1773,6 +1773,19 @@ int kbase_csf_ctx_init(struct kbase_context *kctx)
 	kctx->csf.wq = alloc_workqueue("mali_kbase_csf_wq",
 					WQ_UNBOUND, 1);
 
+	kthread_init_worker(&kctx->csf.pending_submission_worker);
+	kctx->csf.pending_sub_worker_thread = kbase_create_realtime_thread(
+		kctx->kbdev,
+		kthread_worker_fn,
+		&kctx->csf.pending_submission_worker,
+		"mali_submit");
+
+	if (IS_ERR(kctx->csf.pending_sub_worker_thread)) {
+		dev_err(kctx->kbdev->dev, "error initializing pending submission worker thread");
+		destroy_workqueue(kctx->csf.wq);
+		return err;
+	}
+
 	if (likely(kctx->csf.wq)) {
 		err = kbase_csf_scheduler_context_init(kctx);
 
@@ -1814,7 +1827,7 @@ int kbase_csf_ctx_init(struct kbase_context *kctx)
 							  pending_submission_worker);
 					}
 #else
-						INIT_WORK(&kctx->csf.pending_submission_work,
+						kthread_init_work(&kctx->csf.pending_submission_work,
 							  pending_submission_worker);
 #endif /* CONFIG_MALI_MTK_PENDING_SUBMISSION_MODE */
 				} else
@@ -1951,7 +1964,7 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 	} else
 		cancel_work_sync(&kctx->csf.pending_submission_work);
 #else
-		cancel_work_sync(&kctx->csf.pending_submission_work);
+		kthread_cancel_work_sync(&kctx->csf.pending_submission_work);
 #endif /* CONFIG_MALI_MTK_PENDING_SUBMISSION_MODE */
 
 	/* Now that all queue groups have been terminated, there can be no
@@ -2046,6 +2059,9 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 	}
 
 	mutex_unlock(&kctx->csf.lock);
+
+	kthread_flush_worker(&kctx->csf.pending_submission_worker);
+	kthread_stop(kctx->csf.pending_sub_worker_thread);
 
 	kbase_csf_tiler_heap_context_term(kctx);
 	kbase_csf_kcpu_queue_context_term(kctx);
