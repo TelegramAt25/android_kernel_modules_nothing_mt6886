@@ -579,7 +579,7 @@ struct kbase_queue_group {
  *                      allocations.
  */
 struct kbase_csf_kcpu_queue_context {
-	struct mutex lock;
+	struct rt_mutex lock;
 	struct kbase_kcpu_command_queue *array[KBASEP_MAX_KCPU_QUEUES];
 	DECLARE_BITMAP(in_use, KBASEP_MAX_KCPU_QUEUES);
 	atomic64_t num_cmds;
