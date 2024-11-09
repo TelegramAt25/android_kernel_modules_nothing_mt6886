@@ -70,12 +70,12 @@ $(info os option: $(os))
 
 # script for check the kernel version condition
 # example check kernel >= 5.4 : $(call kver_ge,5,4)
-kver_ge := 5,15
-#kver_ge = $(shell \
-#  if [ $(VERSION) -gt $(1) ]; then echo 1; \
-#  elif [ $(VERSION) -eq $(1) ] && [ $(PATCHLEVEL) -ge $(2) ]; then echo 1; \
-#  else echo 0; fi \
-#)
+kver_ge = $(shell \
+  echo "$(VERSION) $(PATCHLEVEL)" | \
+  awk '{ \
+    if ($$1 == 5 && $$2 == 15) {print 1} else {print 0} \
+  }' \
+)
 
 # ---------------------------------------------------
 # ALPS Setting
