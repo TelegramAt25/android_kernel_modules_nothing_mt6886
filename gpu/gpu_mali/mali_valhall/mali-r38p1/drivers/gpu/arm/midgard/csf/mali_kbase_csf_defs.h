@@ -579,7 +579,7 @@ struct kbase_queue_group {
  *                      allocations.
  */
 struct kbase_csf_kcpu_queue_context {
-	struct rt_mutex lock;
+	struct mutex lock;
 	struct kbase_kcpu_command_queue *array[KBASEP_MAX_KCPU_QUEUES];
 	DECLARE_BITMAP(in_use, KBASEP_MAX_KCPU_QUEUES);
 	atomic64_t num_cmds;
@@ -819,7 +819,7 @@ struct kbase_csf_context {
 	DECLARE_BITMAP(cookies, KBASE_CSF_NUM_USER_IO_PAGES_HANDLE);
 	struct kbase_queue *user_pages_info[
 		KBASE_CSF_NUM_USER_IO_PAGES_HANDLE];
-	struct mutex lock;
+	struct rt_mutex lock;
 	struct kbase_queue_group *queue_groups[MAX_QUEUE_GROUP_NUM];
 	struct list_head queue_list;
 	struct kbase_csf_kcpu_queue_context kcpu_queues;

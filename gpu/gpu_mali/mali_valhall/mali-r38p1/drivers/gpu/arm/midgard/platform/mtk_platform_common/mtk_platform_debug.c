@@ -440,7 +440,7 @@ static int mtk_debug_dump_kcpu_queues(struct seq_file *file, void *data)
 
 	mutex_lock(&kbdev->kctx_list_lock);
 	list_for_each_entry(kctx, &kbdev->kctx_list, kctx_list_link) {
-		mutex_lock(&kctx->csf.lock);
+		rt_mutex_lock(&kctx->csf.lock);
 		kbase_csf_scheduler_lock(kbdev);
 
 		// Print per-context KCPU queues debug information
@@ -657,7 +657,7 @@ static int mtk_debug_dump_kcpu_queues(struct seq_file *file, void *data)
 		}
 
 		kbase_csf_scheduler_unlock(kbdev);
-		mutex_unlock(&kctx->csf.lock);
+		rt_mutex_unlock(&kctx->csf.lock);
 	}
 	mutex_unlock(&kbdev->kctx_list_lock);
 
@@ -682,7 +682,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 #if 0
 	mutex_lock(&kbdev->kctx_list_lock);
 	list_for_each_entry(kctx, &kbdev->kctx_list, kctx_list_link) {
-		mutex_lock(&kctx->csf.lock);
+		rt_mutex_lock(&kctx->csf.lock);
 		kbase_csf_scheduler_lock(kbdev);
 
 		// Print per-context CPU queues debug information
@@ -691,7 +691,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 				BASE_CSF_CPU_QUEUE_DUMP_COMPLETE) {
 			seq_printf(file, "[%d_%d] Dump request already started! (try again)\n", kctx->tgid, kctx->id);
 			kbase_csf_scheduler_unlock(kbdev);
-			mutex_unlock(&kctx->csf.lock);
+			rt_mutex_unlock(&kctx->csf.lock);
 			mutex_unlock(&kbdev->kctx_list_lock);
 			return -EINVAL;
 		}
@@ -701,7 +701,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 		kbase_event_wakeup_nosync(kctx);
 
 		kbase_csf_scheduler_unlock(kbdev);
-		mutex_unlock(&kctx->csf.lock);
+		rt_mutex_unlock(&kctx->csf.lock);
 
 		seq_printf(file, "[cpu_queue] CPU Queues table (version:v%u):\n", MALI_CSF_CPU_QUEUE_DEBUGFS_VERSION);
 		seq_printf(file, "[cpu_queue] ##### Ctx %d_%d #####\n", kctx->tgid, kctx->id);
@@ -709,7 +709,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 		wait_for_completion_timeout(&kctx->csf.cpu_queue.dump_cmp,
 				msecs_to_jiffies(3000));
 
-		mutex_lock(&kctx->csf.lock);
+		rt_mutex_lock(&kctx->csf.lock);
 		kbase_csf_scheduler_lock(kbdev);
 
 		if (kctx->csf.cpu_queue.buffer) {
@@ -730,7 +730,7 @@ static int mtk_debug_dump_cpu_queues(struct seq_file *file, void *data)
 
 		}
 		kbase_csf_scheduler_unlock(kbdev);
-		mutex_unlock(&kctx->csf.lock);
+		rt_mutex_unlock(&kctx->csf.lock);
 	}
 	mutex_unlock(&kbdev->kctx_list_lock);
 
@@ -2032,7 +2032,7 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 
 		list_for_each_entry(kctx, &kbdev->kctx_list, kctx_list_link) {
 			if (kctx->tgid == pid) {
-				mutex_lock(&kctx->csf.lock);
+				rt_mutex_lock(&kctx->csf.lock);
 				kbase_csf_scheduler_lock(kbdev);
 				// cat /sys/kernel/debug/mali0/active_groups
 				// Print debug info for active GPU command queue groups
@@ -2474,7 +2474,7 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 						kctx->tgid, kctx->id);
 #endif /* CONFIG_MALI_MTK_LOG_BUFFER */
 					kbase_csf_scheduler_unlock(kbdev);
-					mutex_unlock(&kctx->csf.lock);
+					rt_mutex_unlock(&kctx->csf.lock);
 					mutex_unlock(&kbdev->kctx_list_lock);
 					return;
 				}
@@ -2482,10 +2482,10 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 				atomic_set(&kctx->csf.cpu_queue.dump_req_status, BASE_CSF_CPU_QUEUE_DUMP_ISSUED);
 				init_completion(&kctx->csf.cpu_queue.dump_cmp);
 				kbase_event_wakeup_nosync(kctx);
-				//mutex_unlock(&kctx->csf.lock);
+				//rt_mutex_unlock(&kctx->csf.lock);
 
 				kbase_csf_scheduler_unlock(kbdev);
-				mutex_unlock(&kctx->csf.lock);
+				rt_mutex_unlock(&kctx->csf.lock);
 
 				dev_info(kbdev->dev, "[cpu_queue] CPU Queues table (version:v%u):", MALI_CSF_CPU_QUEUE_DEBUGFS_VERSION);
 				dev_info(kbdev->dev, "[cpu_queue] ##### Ctx %d_%d #####", kctx->tgid, kctx->id);
@@ -2510,7 +2510,7 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 					return;
 				}
 
-				mutex_lock(&kctx->csf.lock);
+				rt_mutex_lock(&kctx->csf.lock);
 				kbase_csf_scheduler_lock(kbdev);
 
 				if (kctx->csf.cpu_queue.buffer) {
@@ -2551,7 +2551,7 @@ void mtk_debug_csf_dump_groups_and_queues(struct kbase_device *kbdev, int pid)
 				}
 
 				kbase_csf_scheduler_unlock(kbdev);
-				mutex_unlock(&kctx->csf.lock);
+				rt_mutex_unlock(&kctx->csf.lock);
 			}
 		}
 

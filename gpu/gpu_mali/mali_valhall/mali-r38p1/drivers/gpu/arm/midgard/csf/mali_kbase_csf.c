@@ -325,7 +325,7 @@ int kbase_csf_alloc_command_stream_user_pages(struct kbase_context *kctx,
 	 */
 	queue->user_io_gpu_va = 0;
 
-	rt_mutex_lock(&kbdev->csf.reg_lock);
+	mutex_lock(&kbdev->csf.reg_lock);
 	if (kbdev->csf.db_file_offsets > (U32_MAX - BASEP_QUEUE_NR_MMAP_USER_PAGES + 1))
 		kbdev->csf.db_file_offsets = 0;
 
@@ -339,7 +339,7 @@ int kbase_csf_alloc_command_stream_user_pages(struct kbase_context *kctx,
 	 */
 	get_queue(queue);
 	queue->bind_state = KBASE_CSF_QUEUE_BOUND;
-	rt_mutex_unlock(&kbdev->csf.reg_lock);
+	mutex_unlock(&kbdev->csf.reg_lock);
 
 	return 0;
 
@@ -916,12 +916,12 @@ void kbase_csf_ring_csg_slots_doorbell(struct kbase_device *kbdev,
 void kbase_csf_ring_cs_user_doorbell(struct kbase_device *kbdev,
 			struct kbase_queue *queue)
 {
-	rt_mutex_lock(&kbdev->csf.reg_lock);
+	mutex_lock(&kbdev->csf.reg_lock);
 
 	if (queue->doorbell_nr != KBASEP_USER_DB_NR_INVALID)
 		kbase_csf_ring_doorbell(kbdev, queue->doorbell_nr);
 
-	rt_mutex_unlock(&kbdev->csf.reg_lock);
+	mutex_unlock(&kbdev->csf.reg_lock);
 }
 
 void kbase_csf_ring_cs_kernel_doorbell(struct kbase_device *kbdev,
@@ -1987,7 +1987,7 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 		unsigned long flags;
 		int refcount;
 
-		rt_mutex_lock(&kbdev->mmu_hw_mutex);
+		mutex_lock(&kbdev->mmu_hw_mutex);
 		spin_lock_irqsave(&kbdev->hwaccess_lock, flags);
 
 		refcount = atomic_read(&kctx->refcount);
@@ -1999,7 +1999,7 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 				"Waiting for pending fault worker to complete when terminating context (%d_%d)",
 				kctx->tgid, kctx->id);
 			spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
-			rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+			mutex_unlock(&kbdev->mmu_hw_mutex);
 			flush_workqueue(as->pf_wq);
 
 			new_refcount = atomic_read(&kctx->refcount);
@@ -2025,7 +2025,7 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 			kbase_ctx_sched_remove_ctx_nolock(kctx);
 
 			spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
-			rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+			mutex_unlock(&kbdev->mmu_hw_mutex);
 		}
 
 		break;
@@ -2067,8 +2067,6 @@ void kbase_csf_ctx_term(struct kbase_context *kctx)
 	kbase_csf_kcpu_queue_context_term(kctx);
 	kbase_csf_scheduler_context_term(kctx);
 	kbase_csf_event_term(kctx);
-
-	rt_mutex_destroy(&kctx->csf.lock);
 }
 
 /**
