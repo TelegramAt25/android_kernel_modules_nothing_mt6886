@@ -206,7 +206,7 @@ static void mmu_flush_invalidate(struct kbase_device *kbdev, struct kbase_contex
 		return;
 
 	/* AS transaction begin */
-	rt_mutex_lock(&kbdev->mmu_hw_mutex);
+	mutex_lock(&kbdev->mmu_hw_mutex);
 	spin_lock_irqsave(&kbdev->hwaccess_lock, flags);
 
 	if (kbdev->pm.backend.gpu_ready && (!kctx || kctx->as_nr >= 0)) {
@@ -217,7 +217,7 @@ static void mmu_flush_invalidate(struct kbase_device *kbdev, struct kbase_contex
 	}
 
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
-	rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+	mutex_unlock(&kbdev->mmu_hw_mutex);
 	/* AS transaction end */
 }
 
@@ -239,7 +239,7 @@ static void mmu_flush_invalidate_on_gpu_ctrl(struct kbase_device *kbdev, struct 
 	unsigned long flags;
 
 	/* AS transaction begin */
-	rt_mutex_lock(&kbdev->mmu_hw_mutex);
+	mutex_lock(&kbdev->mmu_hw_mutex);
 	spin_lock_irqsave(&kbdev->hwaccess_lock, flags);
 
 	if (kbdev->pm.backend.gpu_ready && (!kctx || kctx->as_nr >= 0)) {
@@ -250,7 +250,7 @@ static void mmu_flush_invalidate_on_gpu_ctrl(struct kbase_device *kbdev, struct 
 	}
 
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
-	rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+	mutex_unlock(&kbdev->mmu_hw_mutex);
 }
 
 static void kbase_mmu_sync_pgd_gpu(struct kbase_device *kbdev, struct kbase_context *kctx,
@@ -485,7 +485,7 @@ static void kbase_gpu_mmu_handle_write_faulting_as(struct kbase_device *kbdev,
 	struct kbase_mmu_hw_op_param op_param;
 	int ret = 0;
 
-	rt_mutex_lock(&kbdev->mmu_hw_mutex);
+	mutex_lock(&kbdev->mmu_hw_mutex);
 
 	kbase_mmu_hw_clear_fault(kbdev, faulting_as,
 			KBASE_MMU_FAULT_TYPE_PAGE);
@@ -510,7 +510,7 @@ static void kbase_gpu_mmu_handle_write_faulting_as(struct kbase_device *kbdev,
 		mmu_hw_operation_end(kbdev);
 	}
 
-	rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+	mutex_unlock(&kbdev->mmu_hw_mutex);
 
 	if (ret)
 		dev_err(kbdev->dev,
@@ -901,7 +901,7 @@ void kbase_mmu_page_fault_worker(struct work_struct *data)
 
 #if MALI_JIT_PRESSURE_LIMIT_BASE
 #if !MALI_USE_CSF
-	rt_mutex_lock(&kctx->jctx.lock);
+	mutex_lock(&kctx->jctx.lock);
 #endif
 #endif
 
@@ -1051,7 +1051,7 @@ page_fault_retry:
 				region->start_pfn +
 				current_backed_size);
 
-		rt_mutex_lock(&kbdev->mmu_hw_mutex);
+		mutex_lock(&kbdev->mmu_hw_mutex);
 
 		kbase_mmu_hw_clear_fault(kbdev, faulting_as,
 				KBASE_MMU_FAULT_TYPE_PAGE);
@@ -1087,7 +1087,7 @@ page_fault_retry:
 				fault->addr);
 		}
 
-		rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+		mutex_unlock(&kbdev->mmu_hw_mutex);
 
 		kbase_mmu_hw_enable_fault(kbdev, faulting_as,
 				KBASE_MMU_FAULT_TYPE_PAGE);
@@ -1106,7 +1106,7 @@ page_fault_retry:
 	if (new_pages == 0) {
 		struct kbase_mmu_hw_op_param op_param;
 
-		rt_mutex_lock(&kbdev->mmu_hw_mutex);
+		mutex_lock(&kbdev->mmu_hw_mutex);
 
 		/* Duplicate of a fault we've already handled, nothing to do */
 		kbase_mmu_hw_clear_fault(kbdev, faulting_as,
@@ -1137,7 +1137,7 @@ page_fault_retry:
 				fault->addr);
 		}
 
-		rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+		mutex_unlock(&kbdev->mmu_hw_mutex);
 
 		kbase_mmu_hw_enable_fault(kbdev, faulting_as,
 				KBASE_MMU_FAULT_TYPE_PAGE);
@@ -1224,7 +1224,7 @@ page_fault_retry:
 #endif
 
 		/* AS transaction begin */
-		rt_mutex_lock(&kbdev->mmu_hw_mutex);
+		mutex_lock(&kbdev->mmu_hw_mutex);
 
 		/* clear MMU interrupt - this needs to be done after updating
 		 * the page tables but before issuing a FLUSH command. The
@@ -1268,7 +1268,7 @@ page_fault_retry:
 #endif /* CONFIG_MALI_MTK_LOG_BUFFER */
 		}
 
-		rt_mutex_unlock(&kbdev->mmu_hw_mutex);
+		mutex_unlock(&kbdev->mmu_hw_mutex);
 		/* AS transaction end */
 
 		/* reenable this in the mask */
@@ -1353,7 +1353,7 @@ fault_done:
 		kbase_gpu_vm_unlock(kctx);
 	}
 #if !MALI_USE_CSF
-	rt_mutex_unlock(&kctx->jctx.lock);
+	mutex_unlock(&kctx->jctx.lock);
 #endif
 #endif
 
