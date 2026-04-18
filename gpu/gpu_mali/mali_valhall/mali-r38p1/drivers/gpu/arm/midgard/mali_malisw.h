@@ -27,6 +27,7 @@
 #define _MALISW_H_
 
 #include <linux/version.h>
+#include <linux/minmax.h>
 
 #ifndef MIN
 /**
@@ -38,7 +39,9 @@
  * Refer to MAX macro for more details
  */
 #define MIN(x, y)	((x) < (y) ? (x) : (y))
+#endif
 
+#ifndef MAX
 /**
  * MAX - Return the greater of two values.
  * @x: value1
