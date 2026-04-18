@@ -1630,8 +1630,10 @@ local void fill_window(s)
 /* Maximum stored block length in deflate format (not including header). */
 #define MAX_STORED 65535
 
+#ifndef MIN
 /* Minimum of a and b. */
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
+#enfif
 
 /* ===========================================================================
  * Copy without compression as much as possible from the input stream, return
